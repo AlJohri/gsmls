@@ -22,7 +22,7 @@ setup(
     author_email='al.johri@gmail.com',
     url='https://github.com/AlJohri/gsmls',
     license='MIT',
-    packages=find_packages(),
+    py_modules=['gsmls'],
     install_requires=['requests', 'cssselect', 'lxml'],
     classifiers=[
         'Programming Language :: Python :: 3 :: Only',
