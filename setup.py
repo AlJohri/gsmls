@@ -7,8 +7,11 @@ readme = open('README.rst').read()
 with open('gsmls.py') as f:
     for line in f:
         if line.startswith('__version__ = '):
-            version = exec(line.strip().split(' = ')[-1])
+            version = eval(line.strip().split(' = ')[-1])
             break
+
+if version is None:
+    raise Exception("version not found")
 
 setup(
     name='gsmls',
