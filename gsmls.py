@@ -192,7 +192,8 @@ def get_listings(county, **kwargs):
     listings = get_listings_summary(mlsnums)
     return listings
 
-from gsmls import get_listing_detail
+def get_listing_media_link(mlsid):
+    return f'https://www2.gsmls.com/publicsite/propsearch.do?method=getmedia&mlsnum={mlsid}&lstngsysid=0&imagecount=50&openhousesysid='
 
 def get_listing_detail_preview(mlsid):
 
@@ -207,6 +208,11 @@ def get_listing_detail_preview(mlsid):
     remove_node(content.cssselect('#footer')[0])
     remove_node(content.cssselect('img[alt="More Media"]')[0])
     remove_node(content.cssselect('a[title="Open media link"]')[0])
-    media_url = f"<a href='https://www2.gsmls.com/publicsite/propsearch.do?method=getmedia&mlsnum={mlsid}&lstngsysid=0&imagecount=50&openhousesysid='>More Media</a>"
-    html = media_url + "\n" + lxml.html.tostring(content).decode('utf-8')
+    media_url = get_listing_media_link(mlsid)
+    media_atag = f"<a href='{media_url}'>More Media</a>"
+    html = media_atag + "\n" + lxml.html.tostring(content).decode('utf-8')
     return html
+
+def get_listing_media_preview(mlsid):
+    media_url = get_listing_media_link(mlsid)
+    return requests.get(media_url).text
