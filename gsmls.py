@@ -143,7 +143,7 @@ def get_listings_summary(mlsnums: List[str]):
 
     def parse_money(x):
         if x is not None:
-            return parse_int(x.replace('$', '').strip())
+            return parse_int(x.strip().replace('$', '').replace(',', ''))
         return x
 
     def parse_float(x):
@@ -167,13 +167,13 @@ def get_listings_summary(mlsnums: List[str]):
             "price": parse_money(get(row, 'b u', "MLS#", lambda x: x.getparent().getparent().getprevious()).text),
             "address": parse_str(get(row, 'b', 'Address:', lambda x: x.tail)),
             "county": get(row, 'b u', 'County:', lambda x: x.getparent().getnext()).text,
-            "city/town": get(row, 'b u', 'Cities/Towns:', lambda x: x.getparent().getnext()).text,
+            "city": get(row, 'b u', 'Cities/Towns:', lambda x: x.getparent().getnext()).text,
             "style": get(row, 'b u', 'Style:', lambda x: x.getparent().getnext()).text,
             "rooms": parse_int(get(row, 'b u', 'Rooms:', lambda x: x.getparent().getnext()).text),
             "bedrooms": parse_int(get(row, 'b u', 'Bedrooms:', lambda x: x.getparent().getnext()).text),
-            "full_baths": parse_int(get(row, 'b u', 'Full Baths:', lambda x: x.getparent().getnext()).text),
-            "half_baths": parse_int(get(row, 'b u', 'Half Baths:', lambda x: x.getparent().getnext()).text),
-            "total_baths": parse_float(get(row, 'b u', 'Total Baths:', lambda x: x.getparent().getnext()).text),
+            "baths_full": parse_int(get(row, 'b u', 'Full Baths:', lambda x: x.getparent().getnext()).text),
+            "baths_part": parse_int(get(row, 'b u', 'Half Baths:', lambda x: x.getparent().getnext()).text),
+            "baths_total": parse_float(get(row, 'b u', 'Total Baths:', lambda x: x.getparent().getnext()).text),
             "sq_ft": parse_int(get(row, 'b u', 'Sq Ft:', lambda x: x.getparent().getnext()).text),
             "tax": parse_int(get(row, 'b u', 'Tax Amount:', lambda x: x.getparent().getnext()).text),
             "heat_source": parse_str(get(row, 'b u', 'Heat Source:', lambda x: x.getparent().getnext()).text),
