@@ -14,8 +14,9 @@ https://emailrpt.gsmls.com/public/show_public_report_rpt.do?method=getData&sysid
 
 import re
 import requests
-import lxml.html
+import lxml.html, lxml.etree
 from typing import List
+from itertools import chain
 
 __version__ = '0.0.2'
 
@@ -159,9 +160,22 @@ def get_listings_summary(mlsnums: List[str]):
             return re.sub(r'\s+', ' ', x.strip())
         return x
 
+    def parse_lot(a):
+        try:
+            x, y = a.split('X')
+            return int(x) * int(y)
+        except Exception as e:
+            return None
+
     doc = lxml.html.fromstring(response.content)
     listings = []
     for i, row in enumerate(doc.cssselect('table')):
+        # TODO: add the following attributes
+        # YB/Desc
+        # Remarks
+        # Listing Office
+        # Office Phone
+        # Listing Agent
         listing = {
             "id": get(row, 'b u', "MLS#", lambda x: x.getparent().getnext()).text,
             "price": parse_money(get(row, 'b u', "MLS#", lambda x: x.getparent().getparent().getprevious()).text),
@@ -174,8 +188,10 @@ def get_listings_summary(mlsnums: List[str]):
             "baths_full": parse_int(get(row, 'b u', 'Full Baths:', lambda x: x.getparent().getnext()).text),
             "baths_part": parse_int(get(row, 'b u', 'Half Baths:', lambda x: x.getparent().getnext()).text),
             "baths_total": parse_float(get(row, 'b u', 'Total Baths:', lambda x: x.getparent().getnext()).text),
-            "sq_ft": parse_int(get(row, 'b u', 'Sq Ft:', lambda x: x.getparent().getnext()).text),
+            "sqft": parse_int(get(row, 'b u', 'Sq Ft:', lambda x: x.getparent().getnext()).text),
+            "lot": parse_lot(get(row, 'b u', 'Lot Size:', lambda x: x.getparent().getnext()).text),
             "tax": parse_int(get(row, 'b u', 'Tax Amount:', lambda x: x.getparent().getnext()).text),
+            "tax_year": parse_int(get(row, 'b u', 'Tax Year:', lambda x: x.getparent().getnext()).text),
             "heat_source": parse_str(get(row, 'b u', 'Heat Source:', lambda x: x.getparent().getnext()).text),
             "heat_system": parse_str(get(row, 'b u', 'Heat System:', lambda x: x.getparent().getnext()).text),
             "cool_system": parse_str(get(row, 'b u', 'Cool System:', lambda x: x.getparent().getnext()).text),
@@ -201,6 +217,13 @@ def get_listing_detail_preview(mlsid):
         y = x.getparent()
         y.remove(x)
 
+    def stringify_children(node):
+        parts = ([node.text] +
+                list(chain(*([c.text, lxml.html.tostring(c).decode('utf-8'), c.tail] for c in node.getchildren()))) +
+                [node.tail])
+        # filter removes possible Nones in texts and tails
+        return ''.join(filter(None, parts))
+
     doc = lxml.html.fromstring(get_listing_detail(mlsid).content)
     content = doc.cssselect('#content .bufer')[0]
     remove_node(content.cssselect('input[title="Select this property"]')[0].getnext())
@@ -208,8 +231,11 @@ def get_listing_detail_preview(mlsid):
     remove_node(content.cssselect('#footer')[0])
     remove_node(content.cssselect('img[alt="More Media"]')[0])
     remove_node(content.cssselect('a[title="Open media link"]')[0])
+    img_src = content.cssselect('a[title="Open media link"] img')[0].get('src')
+    remove_node(content.cssselect('a[title="Open media link"]')[0])
+
     media_url = get_listing_media_link(mlsid)
-    media_atag = f"<a href='{media_url}'>More Media</a>"
+    media_atag = f"<a href='{media_url}'><img src='{img_src}'></a>"    
     html = media_atag + "\n" + lxml.html.tostring(content).decode('utf-8')
     return html
 
