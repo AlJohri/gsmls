@@ -1,17 +1,5 @@
 #!/usr/bin/env python3
 
-"""
-http://warren-damiano.idx.rewidx.com/?refine=true&search_by=&sortorder=ASC-ListingPrice&view=grid&map%5Blongitude%5D=-74.36040000000003&map%5Blatitude%5D=40.3724&map%5Bzoom%5D=12&search_zip=07013&search_type=Residential&idx=gsmls&minimum_price=&maximum_price=&search_county=&minimum_bedrooms=&maximum_bedrooms=
-
-http://www.rewidx.com/
-
-http://www.rewidx.com/mls-boards/
-
-http://gsmls.demo.idx.rewidx.com/
-
-https://emailrpt.gsmls.com/public/show_public_report_rpt.do?method=getData&sysid=4745969&ptype=RES&report=onelinerw,clientfull&pubid=249302&Id=128622381_15825&fromPublic=PUBLIC&reportchangeto=true
-"""
-
 import re
 import requests
 import logging
@@ -19,7 +7,7 @@ import lxml.html, lxml.etree
 from typing import List
 from itertools import chain
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 class GSMLSException(Exception):
     pass
@@ -51,7 +39,7 @@ counties = {
 }
 
 def get_towns(county):
-    response = requests.post("https://www2.gsmls.com/publicsite/propsearch.do?method=getpropertysearch", data={
+    payload = {
         "idxId": "",
         "token": "",
         "transactionsought": "purchase",
@@ -59,7 +47,8 @@ def get_towns(county):
         "town": "ALL",
         "Continue": "Continue",
         "countycode": counties[county],
-        "countyname": county})
+        "countyname": county}
+    response = requests.post("https://www2.gsmls.com/publicsite/propsearch.do?method=getpropertysearch", data=payload)
     doc = lxml.html.fromstring(response.content)
     sttowns = doc.cssselect('form[name="propsearch"] input[name="sttowns"]')[0].get('value')
     return sttowns.split(',')
@@ -94,7 +83,7 @@ def get_listings_inner(county, towns, min_list_price='', max_list_price='', min_
     return stmlsnums.split(',')
 
 def get_listing_detail(sysid: str): # mlsnums
-    response = requests.post(f"https://www2.gsmls.com/publicsite/propsearch.do?method=moredetails&sysid={sysid}", data={
+    payload = {
         'idxId': '',
         'token': '',
         'propertytype': 'RES',
@@ -110,11 +99,12 @@ def get_listing_detail(sysid: str): # mlsnums
         'pubid': '',
         'mlsnum': '',
         'stmlsnums': sysid, #','.join(mlsnums),
-        })
+    }
+    response = requests.post(f"https://www2.gsmls.com/publicsite/propsearch.do?method=moredetails&sysid={sysid}", data=payload)
     return response
 
 def get_listings_summary(mlsnums: List[str]):
-    response = requests.post(f"https://www2.gsmls.com/publicsite/propsearch.do?method=printablereport", data={
+    payload = {
         'idxId': '',
         'token': '',
         'propertytype': 'RES',
@@ -131,7 +121,8 @@ def get_listings_summary(mlsnums: List[str]):
         'mlsnum': '',
         'stmlsnums': ','.join(mlsnums),
         'selmlsnums': mlsnums,
-        })
+    }
+    response = requests.post(f"https://www2.gsmls.com/publicsite/propsearch.do?method=printablereport", data=payload)
 
     def get(listing, selector, name, fn):
         try:

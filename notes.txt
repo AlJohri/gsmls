@@ -1,0 +1,9 @@
+http://warren-damiano.idx.rewidx.com/?refine=true&search_by=&sortorder=ASC-ListingPrice&view=grid&map%5Blongitude%5D=-74.36040000000003&map%5Blatitude%5D=40.3724&map%5Bzoom%5D=12&search_zip=07013&search_type=Residential&idx=gsmls&minimum_price=&maximum_price=&search_county=&minimum_bedrooms=&maximum_bedrooms=
+
+http://www.rewidx.com/
+
+http://www.rewidx.com/mls-boards/
+
+http://gsmls.demo.idx.rewidx.com/
+
+https://emailrpt.gsmls.com/public/show_public_report_rpt.do?method=getData&sysid=4745969&ptype=RES&report=onelinerw,clientfull&pubid=249302&Id=128622381_15825&fromPublic=PUBLIC&reportchangeto=true
