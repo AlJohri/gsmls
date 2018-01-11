@@ -14,6 +14,7 @@ https://emailrpt.gsmls.com/public/show_public_report_rpt.do?method=getData&sysid
 
 import re
 import requests
+import logging
 import lxml.html, lxml.etree
 from typing import List
 from itertools import chain
@@ -64,7 +65,7 @@ def get_towns(county):
     return sttowns.split(',')
 
 def get_listings_inner(county, towns, min_list_price='', max_list_price='', min_bedrooms='', min_bathrooms=''):
-    response = requests.post("https://www2.gsmls.com/publicsite/propsearch.do?method=getpropertydetails", data={
+    payload = {
         'idxId': '',
         'token': '',
         'minlistprice': min_list_price,
@@ -81,9 +82,13 @@ def get_listings_inner(county, towns, min_list_price='', max_list_price='', min_
         'propertytypedesc': 'Residential',
         'transactionsought': 'purchase',
         'sttowns': ','.join(towns),
-    })
+    }
+    logging.debug(f"get listings with: {payload}")
+    response = requests.post("https://www2.gsmls.com/publicsite/propsearch.do?method=getpropertydetails", data=payload)
     if "which is over the limit of 250" in response.text:
-        raise GSMLSException(f"more than 250 listings returned in {county}")
+        raise GSMLSException(f"more than 250 listings returned in {county} with payload {payload}")
+    if "Your search returned no records." in response.text:
+        raise GSMLSException(f"your search returned no records in {county} with payload {payload}")
     doc = lxml.html.fromstring(response.content)
     stmlsnums = doc.cssselect('form[name="propsearch"] input[name="stmlsnums"]')[0].get('value')
     return stmlsnums.split(',')
@@ -205,6 +210,7 @@ def get_listings_summary(mlsnums: List[str]):
 def get_listings(county, **kwargs):
     mytowns = get_towns(county)
     mlsnums = get_listings_inner(county, mytowns, **kwargs)
+    # NOTE: if mlsnums is empty it looks like we just return every listing?
     listings = get_listings_summary(mlsnums)
     return listings
 
