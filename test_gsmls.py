@@ -13,3 +13,6 @@ def test_gsmls():
     last_listing_id = listing['id']
     html = get_listing_detail_preview(last_listing_id)
     print(html2text.html2text(html))
+
+if __name__ == "__main__":
+	test_gsmls()

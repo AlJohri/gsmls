@@ -38,20 +38,15 @@ counties = {
     "Warren": 30,
 }
 
+def get_counties():
+    # https://www2.gsmls.com/publicsite/getcountysearch.do?method=getcountysearch&bundle=publicsite.English
+    pass
+
 def get_towns(county):
-    payload = {
-        "idxId": "",
-        "token": "",
-        "transactionsought": "purchase",
-        "propertytype": "RES",
-        "town": "ALL",
-        "Continue": "Continue",
-        "countycode": counties[county],
-        "countyname": county}
-    response = requests.post("https://www2.gsmls.com/publicsite/propsearch.do?method=getpropertysearch", data=payload)
+    county_id = counties[county]
+    response = requests.get(f"https://www2.gsmls.com/publicsite/getcommsearch.do?method=getcommsearch&county={county_id}")
     doc = lxml.html.fromstring(response.content)
-    sttowns = doc.cssselect('form[name="propsearch"] input[name="sttowns"]')[0].get('value')
-    return sttowns.split(',')
+    return [x.get('value') for x in doc.cssselect('#town option') if x != "ALL"]
 
 def get_listings_inner(county, towns, min_list_price='', max_list_price='', min_bedrooms='', min_bathrooms=''):
     payload = {
@@ -73,14 +68,14 @@ def get_listings_inner(county, towns, min_list_price='', max_list_price='', min_
         'sttowns': ','.join(towns),
     }
     logging.debug(f"get listings with: {payload}")
-    response = requests.post("https://www2.gsmls.com/publicsite/propsearch.do?method=getpropertydetails", data=payload)
+    response = requests.post("https://www2.gsmls.com/publicsite/getpropertydetails.do?method=getpropertydetails", data=payload)
     if "which is over the limit of 250" in response.text:
         raise GSMLSException(f"more than 250 listings returned in {county} with payload {payload}")
     if "Your search returned no records." in response.text:
         raise GSMLSException(f"your search returned no records in {county} with payload {payload}")
     doc = lxml.html.fromstring(response.content)
-    stmlsnums = doc.cssselect('form[name="propsearch"] input[name="stmlsnums"]')[0].get('value')
-    return stmlsnums.split(',')
+    stmlsnums = doc.cssselect('#stmlsnums')[0].get('value').split(',')
+    return stmlsnums
 
 def get_listing_detail(sysid: str): # mlsnums
     payload = {
@@ -100,7 +95,7 @@ def get_listing_detail(sysid: str): # mlsnums
         'mlsnum': '',
         'stmlsnums': sysid, #','.join(mlsnums),
     }
-    response = requests.post(f"https://www2.gsmls.com/publicsite/propsearch.do?method=moredetails&sysid={sysid}", data=payload)
+    response = requests.post(f"https://www2.gsmls.com/publicsite/moredetails.do?method=moredetails&sysid={sysid}", data=payload)
     return response
 
 def get_listings_summary(mlsnums: List[str]):
@@ -122,11 +117,11 @@ def get_listings_summary(mlsnums: List[str]):
         'stmlsnums': ','.join(mlsnums),
         'selmlsnums': mlsnums,
     }
-    response = requests.post(f"https://www2.gsmls.com/publicsite/propsearch.do?method=printablereport", data=payload)
+    response = requests.post(f"https://www2.gsmls.com/publicsite/printablereport.do?method=printablereport", data=payload)
 
     def get(listing, selector, name, fn):
         try:
-            return [fn(x) for x in listing.cssselect(selector) if x.text == name][0]
+            return [fn(x) for x in listing.cssselect(selector) if x.text and x.text.strip() == name][0]
         except IndexError:
             return None
 
@@ -232,7 +227,7 @@ def get_listing_detail_preview(mlsid):
     remove_node(content.cssselect('a[title="Open media link"]')[0])
 
     media_url = get_listing_media_link(mlsid)
-    media_atag = f"<a href='{media_url}'><img src='{img_src}'></a>"    
+    media_atag = f"<a href='{media_url}'><img src='{img_src}'></a>"
     html = media_atag + "\n" + lxml.html.tostring(content).decode('utf-8')
     return html
 
