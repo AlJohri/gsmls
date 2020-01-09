@@ -7,7 +7,7 @@ import lxml.html, lxml.etree
 from typing import List
 from itertools import chain
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 class GSMLSException(Exception):
     pass
